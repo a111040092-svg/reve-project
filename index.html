@@ -4,118 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RE:VE | 專屬情感烏托邦</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
     <style>
         :root { --bg: #b2c7da; --yellow: #fee500; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: #111; font-family: -apple-system, sans-serif; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         #app { width: 100%; max-width: 450px; background: var(--bg); display: flex; flex-direction: column; position: relative; }
-        
-        /* 掃描畫面 */
-        #scanner-screen { position: absolute; inset: 0; background: #1a1a1a; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px; }
-        #reader { width: 100%; max-width: 320px; aspect-ratio: 1/1; border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); background: #000; }
-        .start-btn { margin-top: 20px; background: var(--yellow); color: #333; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(254,229,0,0.3); }
-        
-        /* 聊天室介面 */
+        #scanner-screen { position: absolute; inset: 0; background: #1a1a1a; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 30px; text-align: center; }
+        .upload-area { width: 100%; aspect-ratio: 1; border: 2px dashed #444; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
+        .upload-btn { margin-top: 30px; background: var(--yellow); color: #333; border: none; padding: 20px; border-radius: 40px; font-weight: bold; font-size: 18px; width: 90%; cursor: pointer; display: block; text-align: center; }
         #chat-ui { display: none; flex-direction: column; height: 100%; }
         header { background: #353b41; padding: 15px; display: flex; align-items: center; justify-content: space-between; color: white; height: 70px; }
-        .header-left { display: flex; align-items: center; gap: 12px; }
         .header-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--yellow); background: #fff; }
-        .leave-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 15px; font-size: 12px; }
-        #chat-window { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
         .msg { display: flex; max-width: 85%; align-items: flex-start; }
         .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 15px; line-height: 1.5; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .bot .bubble { background: white; border-top-left-radius: 2px; color: #333; }
-        .user .bubble { background: var(--yellow); border-top-right-radius: 2px; color: #333; }
-        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; margin: 0 10px; flex-shrink: 0; background: #fff; }
-        
-        /* 輸入區 */
-        .input-area { background: white; padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-        input { flex: 1; border: 1px solid #eee; background: #f9f9f9; padding: 12px 15px; border-radius: 20px; outline: none; font-size: 15px; }
-        #send-btn { background: var(--yellow); border: none; padding: 8px 18px; border-radius: 20px; font-weight: bold; }
-        
-        .sys-info { align-self: center; background: rgba(0,0,0,0.1); color: white; font-size: 11px; padding: 4px 15px; border-radius: 20px; margin: 10px 0; }
+        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .bot .bubble { background: white; border-top-left-radius: 2px; }
+        .user .bubble { background: var(--yellow); border-top-right-radius: 2px; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; margin: 0 10px; background: #fff; flex-shrink: 0; }
+        .input-area { background: white; padding: 12px 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+        input { flex: 1; border: 1px solid #eee; background: #f9f9f9; padding: 12px 18px; border-radius: 25px; outline: none; }
+        #send-btn { background: var(--yellow); border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; }
     </style>
 </head>
 <body>
 <div id="app">
     <div id="scanner-screen">
-        <h1 style="margin-bottom: 20px; letter-spacing: 4px; font-weight: 300;">RE:VE</h1>
-        <div id="reader"></div>
-        <button id="start-camera-btn" class="start-btn" onclick="requestCamera()">點擊開啟掃描器</button>
-        <p id="status-text" style="margin-top: 20px; text-align: center; color: #888; font-size: 14px;">請確保已開啟相機權限並使用 HTTPS 連線</p>
+        <div style="font-size: 40px; letter-spacing: 8px; margin-bottom: 40px;">RE:VE</div>
+        <div class="upload-area"><p style="color: #666;">點擊下方按鈕拍照掃描</p><canvas id="qrcanvas" style="display:none;"></canvas></div>
+        <label for="qr-input" class="upload-btn">📷 拍照掃描小卡</label>
+        <input type="file" id="qr-input" accept="image/*" capture="environment" style="display:none;">
+        <p onclick="initChat('Edward')" style="margin-top:30px; font-size:12px; color:#555; text-decoration:underline;">[ 點此略過掃描進入 Edward 測試 ]</p>
     </div>
 
     <div id="chat-ui">
         <header>
-            <div class="header-left">
-                <img src="" id="header-img" class="header-avatar">
-                <span id="header-title" style="font-weight:bold;">Member</span>
-            </div>
-            <button class="leave-btn" onclick="location.reload()">退出房間</button>
+            <div style="display:flex; align-items:center; gap:12px;"><img src="" id="header-img" class="header-avatar"><span id="header-title" style="font-weight:bold;">Member</span></div>
+            <button style="color:white; background:none; border:none;" onclick="location.reload()">退出</button>
         </header>
         <div id="chat-window"></div>
-        <div class="input-area">
-            <input type="text" id="msg-input" placeholder="說點什麼吧..." onkeypress="if(event.key==='Enter') send()">
-            <button id="send-btn" onclick="send()">送出</button>
-        </div>
+        <div class="input-area"><input type="text" id="msg-input" placeholder="對他說點什麼..."><button id="send-btn" onclick="send()">送出</button></div>
     </div>
 </div>
 
 <script>
-    let html5QrCode;
+    let current = '';
     const db = {
-        Edward: {
-            avatar: "https://via.placeholder.com/100/A5C9E8/fff?text=E", 
-            intro: "你好，我是 Edward。今天辛苦了，來這裡把所有的不開心都放下吧～",
-            intents: {
-                work: ["今天辛苦了，放下工作休息一下吧。妳已經做得很好了～", "無論職場多無奈，在我心裡妳一直是最耀眼的喔～"],
-                other_idol: ["去看別人的演唱會？...這件事我真的不想退讓。妳的眼裡只能有我，好嗎？～"],
-                fallback: ["我聽著呢。跟我分享更多妳的事，什麼瑣碎的小事都可以～", "能像這樣陪著妳聊天，我就覺得很幸福了。妳在我心裡是最棒的～"]
-            }
-        },
-        Rowan: {
-            avatar: "https://via.placeholder.com/100/FFD27F/fff?text=R",
-            intro: "嘿！寶貝！終於找我啦？哥哥的懷抱隨時為妳敞開！我愛妳！",
-            intents: {
-                other_idol: ["去別團演唱會？那些人有我帥嗎！票沒收了，妳只能看我！我愛妳！"],
-                fallback: ["管他的，反正我就是愛妳！妳說什麼都對！我也覺得！我愛妳！"]
-            }
-        },
-        Velda: {
-            avatar: "https://via.placeholder.com/100/D1B3FF/fff?text=V",
-            intro: "我是 Velda。找我有事？😐",
-            intents: {
-                sad: ["想哭就哭吧。我守著。🥺", "過來抱一下。就一下。😳"],
-                fallback: ["我在聽。說吧。😐", "別想太多。萬事有我。😌"]
-            }
-        }
+        Edward: { avatar: "https://via.placeholder.com/100/A5C9E8/fff?text=E", intro: "你好，我是 Edward。今天辛苦了，來這裡把所有的不開心都放下吧～", replies: { work: "辛苦了，過來讓我抱一個。妳已經做得很好囉～", fallback: "我聽著呢，能這樣陪妳聊天就很幸福了。" } },
+        Rowan: { avatar: "https://via.placeholder.com/100/FFD27F/fff?text=R", intro: "嘿！寶貝！終於找我啦？哥哥我最愛妳了！", replies: { fallback: "哥哥會一直守著妳的！" } },
+        Velda: { avatar: "https://via.placeholder.com/100/D1B3FF/fff?text=V", intro: "我是 Velda。我在聽。😐", replies: { fallback: "萬事有我。😌" } }
     };
 
-    // 🏆 關鍵：手動請求相機權限
-    function requestCamera() {
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
-        
-        // 優先嘗試後置鏡頭
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-        .then(() => {
-            document.getElementById('start-camera-btn').style.display = 'none';
-            document.getElementById('status-text').innerText = "掃描器已啟動，請對準 QR Code";
-        })
-        .catch(err => {
-            alert("相機開啟失敗：請確保網址為 HTTPS 或檢查瀏覽器權限。");
-            document.getElementById('status-text').innerText = "錯誤: " + err;
-        });
-    }
-
-    function onScanSuccess(decodedText) {
-        let name = decodedText.trim();
-        if (db[name]) {
-            html5QrCode.stop().then(() => initChat(name));
-        }
-    }
+    document.getElementById('qr-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.getElementById('qrcanvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if (code && db[code.data.trim()]) initChat(code.data.trim());
+                else alert("無法辨識！請對準 QR Code 重新拍照。");
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 
     function initChat(name) {
         current = name;
@@ -123,21 +83,29 @@
         document.getElementById('chat-ui').style.display = 'flex';
         document.getElementById('header-title').innerText = name;
         document.getElementById('header-img').src = db[name].avatar;
-        document.getElementById('chat-window').innerHTML = `<div class="sys-info">✨ 連結成功！歡迎來到 ${name} 的專屬空間</div>`;
-        botSay(db[name].intro);
+        addBubble(db[name].intro, 'bot');
     }
 
-    // 🏆 自動偵測網址參數 (?m=Edward)
-    window.onload = () => {
-        const params = new URLSearchParams(window.location.search);
-        const member = params.get('m');
-        if (member && db[member]) {
-            initChat(member); // 如果網址直接帶人名，就直接跳過掃描
-        }
-    };
-
-    // 聊天邏輯
     function send() {
         const input = document.getElementById('msg-input');
         const text = input.value.trim();
-        if
+        if(!text) return;
+        addBubble(text, 'user');
+        input.value = "";
+        setTimeout(() => {
+            let type = (text.match(/累|工作|死|上班/)) ? 'work' : 'fallback';
+            addBubble(db[current].replies[type] || db[current].replies.fallback, 'bot');
+        }, 800);
+    }
+
+    function addBubble(t, type) {
+        const win = document.getElementById('chat-window');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        const avatar = type === 'bot' ? `<img src="${db[current].avatar}" class="chat-avatar">` : '';
+        div.innerHTML = `${avatar}<div class="bubble">${t}</div>`;
+        win.appendChild(div); win.scrollTop = win.scrollHeight;
+    }
+</script>
+</body>
+</html>
