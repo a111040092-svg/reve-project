@@ -4,95 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RE:VE | 專屬情感烏托邦</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root { --bg: #b2c7da; --yellow: #fee500; --dark: #353b41; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: #111; font-family: -apple-system, "PingFang TC", sans-serif; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: #111; font-family: -apple-system, sans-serif; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         #app { width: 100%; max-width: 450px; background: var(--bg); display: flex; flex-direction: column; position: relative; }
         
-        /* 門面畫面 */
-        #scanner-screen { position: absolute; inset: 0; background: #1a1a1a; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 30px; text-align: center; }
-        .logo { font-size: 48px; letter-spacing: 10px; margin-bottom: 20px; font-weight: 300; color: #fff; }
-        .sub-logo { font-size: 14px; color: #888; margin-bottom: 50px; letter-spacing: 2px; }
+        /* 掃描介面 */
+        #scanner-screen { position: absolute; inset: 0; background: #1a1a1a; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px; }
+        .logo { font-size: 40px; letter-spacing: 8px; margin-bottom: 20px; font-weight: 300; }
+        #reader { width: 100%; max-width: 320px; aspect-ratio: 1/1; border-radius: 20px; overflow: hidden; border: 2px solid var(--yellow); background: #000; }
+        .start-btn { margin-top: 25px; background: var(--yellow); color: #333; border: none; padding: 18px 40px; border-radius: 40px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(254,229,0,0.4); }
         
-        .member-select-box { width: 100%; display: flex; flex-direction: column; gap: 15px; }
-        .member-btn { background: #333; border: 1px solid #444; color: white; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: space-between; }
-        .member-btn:active { background: #444; transform: scale(0.98); }
-        .member-btn.edward { border-left: 8px solid #A5C9E8; }
-        .member-btn.rowan { border-left: 8px solid #FFD27F; }
-        .member-btn.velda { border-left: 8px solid #D1B3FF; }
-        .member-btn span { font-size: 12px; font-weight: normal; color: #888; }
-
         /* 聊天介面 */
         #chat-ui { display: none; flex-direction: column; height: 100%; }
-        header { background: var(--dark); padding: 15px; display: flex; align-items: center; justify-content: space-between; color: white; height: 70px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .header-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--yellow); background: #fff; object-fit: cover; }
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+        header { background: var(--dark); padding: 15px; display: flex; align-items: center; justify-content: space-between; color: white; height: 70px; }
+        .header-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--yellow); background: #fff; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .msg { display: flex; max-width: 85%; align-items: flex-start; }
         .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .bot .bubble { background: white; border-top-left-radius: 2px; color: #333; }
-        .user .bubble { background: var(--yellow); border-top-right-radius: 2px; color: #333; }
+        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.6; }
+        .bot .bubble { background: white; border-top-left-radius: 2px; }
+        .user .bubble { background: var(--yellow); border-top-right-radius: 2px; }
         .chat-avatar { width: 40px; height: 40px; border-radius: 50%; margin: 0 10px; flex-shrink: 0; background: #fff; }
-        
         .input-area { background: white; padding: 12px 15px; display: flex; gap: 10px; border-top: 1px solid #ddd; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-        input { flex: 1; border: 1px solid #eee; background: #f9f9f9; padding: 12px 20px; border-radius: 30px; outline: none; font-size: 16px; }
-        #send-btn { background: var(--yellow); border: none; padding: 10px 22px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        input { flex: 1; border: 1px solid #eee; background: #f9f9f9; padding: 12px 18px; border-radius: 25px; outline: none; font-size: 16px; }
+        #send-btn { background: var(--yellow); border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; }
     </style>
 </head>
 <body>
 <div id="app">
     <div id="scanner-screen">
         <div class="logo">RE:VE</div>
-        <div class="sub-logo">請點擊成員小卡進入對話</div>
-        <div class="member-select-box">
-            <button class="member-btn edward" onclick="initChat('Edward')">Edward <span>溫柔體貼的守護者</span></button>
-            <button class="member-btn rowan" onclick="initChat('Rowan')">Rowan <span>陽光熱情的鄰家長男</span></button>
-            <button class="member-btn velda" onclick="initChat('Velda')">Velda <span>高冷優雅的隊長</span></button>
-        </div>
-        <p style="margin-top: 40px; font-size: 12px; color: #444;">IDOL CHAT SIMULATOR v2.0</p>
+        <div id="reader"></div>
+        <button id="cam-btn" class="start-btn" onclick="startScanner()">開啟掃描鏡頭</button>
+        <p style="margin-top: 20px; color: #888; font-size: 14px;">對準成員小卡的 QR Code 即可進入</p>
+        <p onclick="initChat('Edward')" style="margin-top: 20px; font-size: 12px; color: #444; text-decoration: underline;">[ 點此測試 Edward 聊天室 ]</p>
     </div>
 
     <div id="chat-ui">
         <header>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <img src="" id="header-img" class="header-avatar">
-                <span id="header-title" style="font-weight:bold; letter-spacing:1px;">Member</span>
-            </div>
-            <button style="color:#aaa; background:none; border:none; font-size:14px;" onclick="location.reload()">退出</button>
+            <div style="display:flex; align-items:center; gap:12px;"><img src="" id="header-img" class="header-avatar"><span id="header-title" style="font-weight:bold;">Member</span></div>
+            <button style="color:white; background:none; border:none;" onclick="location.reload()">退出</button>
         </header>
         <div id="chat-window"></div>
-        <div class="input-area">
-            <input type="text" id="msg-input" placeholder="想對他說什麼？" onkeypress="if(event.key==='Enter') send()">
-            <button id="send-btn" onclick="send()">傳送</button>
-        </div>
+        <div class="input-area"><input type="text" id="msg-input" placeholder="想對他說什麼？"><button id="send-btn" onclick="send()">送出</button></div>
     </div>
 </div>
 
 <script>
+    let html5QrCode;
     let current = '';
     const db = {
-        Edward: {
-            avatar: "https://via.placeholder.com/100/A5C9E8/fff?text=E", 
-            intro: "你好，我是 Edward。今天辛苦了，來這裡把所有的不開心都放下吧～",
-            replies: {
-                work: "辛苦了，不要再想工作的事了。去洗個熱水澡、追個劇放鬆一下，好嗎？過來讓我抱一個，妳已經做得很好囉～",
-                idol: "要去別團演唱會？...雖然想讓妳開心，但這件事我真的不想退讓。妳的眼裡只能有我，好嗎？",
-                sad: "乖，不難過。把不開心的事通通交給我，我會用全部的溫暖治癒妳的。",
-                fallback: "我在聽喔。能像這樣陪著妳聊天，我就覺得很幸福了。妳在我心裡是最棒的。"
-            }
-        },
-        Rowan: {
-            avatar: "https://via.placeholder.com/100/FFD27F/fff?text=R",
-            intro: "嘿！寶貝！終於找我啦？哥哥的懷抱隨時為妳敞開！我愛妳！",
-            replies: { fallback: "哥哥會一直守護妳的！因為我最愛妳了啊！" }
-        },
-        Velda: {
-            avatar: "https://via.placeholder.com/100/D1B3FF/fff?text=V",
-            intro: "我是 Velda。找我有事？😐",
-            replies: { fallback: "我在聽。別想太多，萬事有我。😌" }
-        }
+        Edward: { avatar: "https://via.placeholder.com/100/A5C9E8/fff?text=E", intro: "你好，我是 Edward。今天辛苦了，來這裡把所有的不開心都放下吧～", replies: { work: "辛苦了，不要再想工作的事了。去洗個熱水澡放鬆一下吧。過來讓我抱一個，妳已經做得很好囉～", fallback: "我在聽喔。能這樣陪著妳聊天，我就覺得很幸福了。" } },
+        Rowan: { avatar: "https://via.placeholder.com/100/FFD27F/fff?text=R", intro: "嘿！寶貝！哥哥我最愛妳了！", replies: { fallback: "哥哥會一直守著妳的！" } },
+        Velda: { avatar: "https://via.placeholder.com/100/D1B3FF/fff?text=V", intro: "我是 Velda。我在聽。😐", replies: { fallback: "萬事有我。😌" } }
     };
+
+    async function startScanner() {
+        const btn = document.getElementById('cam-btn');
+        btn.innerText = "正在啟動鏡頭...";
+        html5QrCode = new Html5Qrcode("reader");
+        try {
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                const name = text.trim();
+                if(db[name]) {
+                    html5QrCode.stop().then(() => initChat(name));
+                }
+            });
+            btn.style.display = 'none';
+        } catch (err) {
+            alert("⚠️ 錯誤：瀏覽器封鎖了相機！請點選網址列左邊的鎖頭圖示，並開啟「相機」權限，然後重新整理。");
+            btn.innerText = "重新開啟鏡頭";
+        }
+    }
 
     function initChat(name) {
         current = name;
@@ -109,12 +95,8 @@
         if(!text) return;
         addBubble(text, 'user');
         input.value = "";
-        
         setTimeout(() => {
-            let type = 'fallback';
-            if (text.match(/累|工作|上班|死|老闆/)) type = 'work';
-            else if (text.match(/演唱會|其他偶像|看別人/)) type = 'idol';
-            else if (text.match(/難過|哭|煩/)) type = 'sad';
+            let type = text.match(/累|工作|上班|死/) ? 'work' : 'fallback';
             addBubble(db[current].replies[type] || db[current].replies.fallback, 'bot');
         }, 800);
     }
@@ -125,8 +107,7 @@
         div.className = `msg ${type}`;
         const avatar = type === 'bot' ? `<img src="${db[current].avatar}" class="chat-avatar">` : '';
         div.innerHTML = `${avatar}<div class="bubble">${t}</div>`;
-        win.appendChild(div);
-        win.scrollTop = win.scrollHeight;
+        win.appendChild(div); win.scrollTop = win.scrollHeight;
     }
 </script>
 </body>
